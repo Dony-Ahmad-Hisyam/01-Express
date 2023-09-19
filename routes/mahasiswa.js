@@ -49,4 +49,28 @@ router.post("/store", [body("nama").notEmpty(), body("nrp").notEmpty()], (req, r
   });
 });
 
+router.get("/(:id)", function (req, res) {
+  let id = req.params.id;
+  connection.query(`SELECT * From mahasiswa where id_m = ${id}`, function (err, rows) {
+    if (err) {
+      return res.status(500).json({
+        status: false,
+        message: "Server Error",
+      });
+    }
+    if (rows.length <= 0) {
+      return res.status(404).json({
+        status: false,
+        message: "Not Found",
+      });
+    } else {
+      return res.status(200).json({
+        status: true,
+        message: "Data Mahasiswa",
+        data: rows[0],
+      });
+    }
+  });
+});
+
 module.exports = router;
