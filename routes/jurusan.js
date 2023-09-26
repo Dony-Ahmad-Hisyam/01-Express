@@ -6,9 +6,9 @@ const { body, validationResult } = require("express-validator");
 const connection = require("../config/db");
 
 router.get("/", function (req, res) {
-  connection.query("SELECT a.nama, b.nama_jurusan AS jurusan FROM mahasiswa a JOIN jurusan b ON b.id_j = a.id_jurusan ORDER BY a.id_m DESC", function (err, rows) {
+  connection.query("SELECT * from jurusan", function (err, rows) {
     if (err) {
-      console.error(err); // Tampilkan error di konsol
+      console.error(err);
       return res.status(500).json({
         status: false,
         message: "Server Error",
@@ -22,13 +22,9 @@ router.get("/", function (req, res) {
     }
   });
 });
-router.post(
-  "/store",
-  [
-    body("nama").notEmpty(),
-    body("nrp").notEmpty(),
-    body("id_jurusan").notEmpty(), // Menambah validasi untuk jurusan
-  ],
+
+router.post("/store", [
+  body("nama_jurusan").notEmpty(),
   (req, res) => {
     const error = validationResult(req);
     if (!error.isEmpty()) {
@@ -37,11 +33,9 @@ router.post(
       });
     }
     let Data = {
-      nama: req.body.nama,
-      nrp: req.body.nrp,
-      id_jurusan: req.body.id_jurusan, // Menambahkan jurusan ke dalam data
+      nama_jurusan: req.body.nama_jurusan,
     };
-    connection.query("INSERT into mahasiswa set ? ", Data, function (err, rows) {
+    connection.query("INSERT into jurusan set ? ", Data, function (err, rows) {
       if (err) {
         return res.status(500).json({
           status: false,
@@ -55,12 +49,12 @@ router.post(
         });
       }
     });
-  }
-);
+  },
+]);
 
-router.get("/(:id)", function (req, res) {
-  let id = req.params.id;
-  connection.query(`SELECT * From mahasiswa where id_m = ${id}`, function (err, rows) {
+router.get("/(:id_j)", function (req, res) {
+  let id_j = req.params.id_j;
+  connection.query(`SELECT * From jurusan where id_j = ${id_j}`, function (err, rows) {
     if (err) {
       return res.status(500).json({
         status: false,
@@ -75,14 +69,14 @@ router.get("/(:id)", function (req, res) {
     } else {
       return res.status(200).json({
         status: true,
-        message: "Data Mahasiswa",
+        message: "Data Jurusan",
         data: rows[0],
       });
     }
   });
 });
 
-router.patch("/update/(:id)", [body("nama").notEmpty(), body("nrp").notEmpty()], (req, res) => {
+router.patch("/update/(:id)", [body("nama_jurusan").notEmpty()], (req, res) => {
   const error = validationResult(req);
   if (!error.isEmpty()) {
     return res.status(422).json({
@@ -91,10 +85,9 @@ router.patch("/update/(:id)", [body("nama").notEmpty(), body("nrp").notEmpty()],
   }
   let id = req.params.id;
   let Data = {
-    nama: req.body.nama,
-    nrp: req.body.nrp,
+    nama_jurusan: req.body.nama_jurusan,
   };
-  connection.query(`UPDATE mahasiswa set ? where id_m = ${id}`, Data, function (err, rows) {
+  connection.query(`UPDATE jurusan set ? where id_j = ${id}`, Data, function (err, rows) {
     if (err) {
       return res.status(500).json({
         status: false,
@@ -111,7 +104,7 @@ router.patch("/update/(:id)", [body("nama").notEmpty(), body("nrp").notEmpty()],
 
 router.delete("/delete/(:id)", function (req, res) {
   let id = req.params.id;
-  connection.query(`DELETE From mahasiswa where id_m = ${id}`, function (err, rows) {
+  connection.query(`DELETE From jurusan where id_j = ${id}`, function (err, rows) {
     if (err) {
       return res.status(500).json({
         status: false,
