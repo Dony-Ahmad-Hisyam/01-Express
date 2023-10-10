@@ -49,7 +49,7 @@ router.get("/", function (req, res) {
 });
 
 router.post(
-  "/store",upload.single("gambar"),
+  "/store",upload.fields([{ name: 'gambar', maxCount: 1 }, { name: 'swa_foto', maxCount: 1 }]),
   [
     body("nama").notEmpty(),
     body("nrp").notEmpty(),
@@ -66,7 +66,9 @@ router.post(
       nama: req.body.nama,
       nrp: req.body.nrp,
       id_jurusan: req.body.id_jurusan, 
-      gambar: req.file.filename
+      gambar: req.files.gambar[0].filename, 
+      swa_foto: req.files.swa_foto[0].filename
+      
     };
     connection.query("INSERT into mahasiswa set ? ", Data, function (err, rows) {
       if (err) {
