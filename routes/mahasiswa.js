@@ -1,9 +1,21 @@
 const express = require("express");
 const router = express.Router();
-
 const { body, validationResult } = require("express-validator");
-
 const connection = require("../config/db");
+
+const multer = require("multer")
+const path = require("path")
+
+const storage = multer. diskStorage({
+  destination: (reg, file, cb) => {
+  cb(null,'public/images')
+ },
+  filename: (reg, file, cb) => {
+  console.log(file)
+  cb(null, Date.now() + path.extname (file.originalname) )}
+  })
+  const upload = multer ({storage: storage});
+
 
 router.get("/", function (req, res) {
   connection.query("SELECT a.nama, b.nama_jurusan AS jurusan FROM mahasiswa a JOIN jurusan b ON b.id_j = a.id_jurusan ORDER BY a.id_m DESC", function (err, rows) {
@@ -23,7 +35,7 @@ router.get("/", function (req, res) {
   });
 });
 router.post(
-  "/store",
+  "/store",upload.single("gambar"),
   [
     body("nama").notEmpty(),
     body("nrp").notEmpty(),
@@ -39,7 +51,8 @@ router.post(
     let Data = {
       nama: req.body.nama,
       nrp: req.body.nrp,
-      id_jurusan: req.body.id_jurusan, // Menambahkan jurusan ke dalam data
+      id_jurusan: req.body.id_jurusan, 
+      gambar: req.file.filename
     };
     connection.query("INSERT into mahasiswa set ? ", Data, function (err, rows) {
       if (err) {

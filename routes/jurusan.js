@@ -76,7 +76,7 @@ router.get("/(:id_j)", function (req, res) {
   });
 });
 
-router.patch("/update/(:id)", [body("nama_jurusan").notEmpty()], (req, res) => {
+router.patch("/update/(:id_j)", [body("nama_jurusan").notEmpty()], (req, res) => {
   const error = validationResult(req);
   if (!error.isEmpty()) {
     return res.status(422).json({
@@ -102,7 +102,7 @@ router.patch("/update/(:id)", [body("nama_jurusan").notEmpty()], (req, res) => {
   });
 });
 
-router.delete("/delete/(:id)", function (req, res) {
+router.delete("/delete/(:id_j)", function (req, res) {
   let id = req.params.id;
   connection.query(`DELETE From jurusan where id_j = ${id}`, function (err, rows) {
     if (err) {
