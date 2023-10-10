@@ -112,7 +112,8 @@ router.get("/(:id)", function (req, res) {
 });
 
 
-router.patch("/update/:id", upload.single("gambar"), [
+router.patch("/update/:id",upload.fields([{ name: 'gambar', maxCount: 1 }, { name: 'swa_foto', maxCount: 1 }])
+, [
   body("nama").notEmpty(),
   body("nrp").notEmpty(),
   body("id_jurusan").notEmpty(),
@@ -125,7 +126,9 @@ router.patch("/update/:id", upload.single("gambar"), [
   }
 
   const id = req.params.id;
-  const gambar = req.file ? req.file.filename : null;
+
+  const gambar = req.files['gambar'] ? req.files['gambar'][0].filename:null;
+  const swa_foto = req.files['swa_foto'] ? req.files['swa_foto'][0].filename:null;
 
   connection.query(`SELECT * FROM mahasiswa WHERE id_m = ${id}`, function (err, rows) {
     if (err) {
@@ -141,18 +144,24 @@ router.patch("/update/:id", upload.single("gambar"), [
       });
     }
 
-    const namaFileLama = rows[0].gambar;
+    const gambarLama = rows[0].gambar;
+    const swa_fotoLama = rows[0].swa_foto;
 
-    if (namaFileLama && gambar) {
-      const pathFileLama = path.join(__dirname, '../public/images', namaFileLama);
-      fs.unlinkSync(pathFileLama);
+    if (gambarLama && gambar) {
+      const pathGambar = path.join(__dirname, '../public/images', gambarLama);
+      fs.unlinkSync(pathGambar);
+    }
+    if (swa_fotoLama && gambar) {
+      const pathSwa = path.join(__dirname, '../public/images', swa_fotoLama);
+      fs.unlinkSync(pathSwa);
     }
 
     let Data = {
       nama: req.body.nama,
       nrp: req.body.nrp,
       id_jurusan:req.body.id_jurusan,
-      gambar: gambar
+      gambar: gambar,
+      swa_foto:swa_foto
     };
 
     connection.query(`UPDATE mahasiswa SET ? WHERE id_m = ${id}`, Data, function (err, result) {
