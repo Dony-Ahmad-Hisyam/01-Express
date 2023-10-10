@@ -6,16 +6,26 @@ const fs = require('fs')
 const multer = require("multer")
 const path = require("path")
 
-const storage = multer. diskStorage({
-  destination: (reg, file, cb) => {
-  cb(null,'public/images')
- },
-  filename: (reg, file, cb) => {
-  console.log(file)
-  cb(null, Date.now() + path.extname (file.originalname) )}
-  })
-  const upload = multer ({storage: storage});
 
+  const filefilter = (reg,file, cb) => {
+    // Mengecek jenis file yang diizinkan (misalnya, hanya gambar JPEG atau PNG)
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    cb(null, true); // Izinkan file
+    } else {
+      cb(new Error('Jenis file tidak diizinkan'), false); // Tolak file
+    }
+  };
+
+  const storage = multer. diskStorage({
+    destination: (reg, file, cb) => {
+    cb(null,'public/images')
+   },
+    filename: (reg, file, cb) => {
+    console.log(file)
+    cb(null, Date.now() + path.extname (file.originalname) )}
+    })
+    const upload = multer ({storage: storage,fileFilter:filefilter});
+  
 
 router.get("/", function (req, res) {
   connection.query(
