@@ -5,9 +5,11 @@ const bodyPrs = require("body-parser");
 const app = express();
 const port = 3000;
 
+const cors = require("cors");
+app.use(cors());
+
 app.use(bodyPrs.urlencoded({ extended: false }));
 app.use(bodyPrs.json());
-
 app.use("/api/mhs", mhsRouter);
 app.use("/api/jurusan", jurRouter);
 
