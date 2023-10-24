@@ -7,6 +7,8 @@ const port = 3000;
 
 const cors = require("cors");
 app.use(cors());
+const path = require("path");
+app.use("/static", express.static(path.join(__dirname, "public/images")));
 
 app.use(bodyPrs.urlencoded({ extended: false }));
 app.use(bodyPrs.json());

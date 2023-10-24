@@ -28,7 +28,7 @@ const upload = multer({ storage: storage, fileFilter: filefilter });
 
 router.get("/", function (req, res) {
   connection.query(
-    "SELECT a.nama, b.nama_jurusan AS jurusan FROM mahasiswa a JOIN jurusan b ON b.id_j = a.id_jurusan ORDER BY a.id_m DESC",
+    "SELECT a.id_m, a.nama, a.nrp, b.nama_jurusan AS jurusan, a.gambar, a.swa_foto FROM mahasiswa a JOIN jurusan b ON b.id_j = a.id_jurusan ORDER BY a.id_m DESC",
     function (err, rows) {
       if (err) {
         console.error(err); // Tampilkan error di konsol
@@ -186,9 +186,14 @@ router.patch(
           nama: req.body.nama,
           nrp: req.body.nrp,
           id_jurusan: req.body.id_jurusan,
-          gambar: gambar,
-          swa_foto: swa_foto,
         };
+
+        if (gambar) {
+          Data.gambar = gambar;
+        }
+        if (swa_foto) {
+          Data.swa_foto = swa_foto;
+        }
 
         connection.query(
           `UPDATE mahasiswa SET ? WHERE id_m = ${id}`,
