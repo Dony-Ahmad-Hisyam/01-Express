@@ -4,6 +4,7 @@ const { body, validationResult } = require("express-validator");
 const connection = require("../config/db");
 const fs = require("fs");
 const multer = require("multer");
+const authenticateToken = require("../routes/auth/midleware/authenticateToken");
 const path = require("path");
 
 const filefilter = (reg, file, cb) => {
@@ -26,12 +27,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage, fileFilter: filefilter });
 
-router.get("/", function (req, res) {
+router.get("/", authenticateToken, function (req, res) {
   connection.query(
     "SELECT a.id_m, a.nama, a.nrp, b.nama_jurusan AS jurusan, a.gambar, a.swa_foto FROM mahasiswa a JOIN jurusan b ON b.id_j = a.id_jurusan ORDER BY a.id_m DESC",
     function (err, rows) {
       if (err) {
-        console.error(err); // Tampilkan error di konsol
+        console.error(err);
         return res.status(500).json({
           status: false,
           message: "Server Error",
@@ -49,6 +50,7 @@ router.get("/", function (req, res) {
 
 router.post(
   "/store",
+  authenticateToken,
   upload.fields([
     { name: "gambar", maxCount: 1 },
     { name: "swa_foto", maxCount: 1 },
@@ -93,7 +95,7 @@ router.post(
   }
 );
 
-router.get("/(:id)", function (req, res) {
+router.get("/(:id)", authenticateToken, function (req, res) {
   let id = req.params.id;
   connection.query(
     `SELECT * From mahasiswa where id_m = ${id}`,
@@ -122,6 +124,7 @@ router.get("/(:id)", function (req, res) {
 
 router.patch(
   "/update/:id",
+  authenticateToken,
   upload.fields([
     { name: "gambar", maxCount: 1 },
     { name: "swa_foto", maxCount: 1 },
@@ -132,22 +135,21 @@ router.patch(
     body("id_jurusan").notEmpty(),
   ],
   (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const error = validationResult(req);
+    if (!error.isEmpty()) {
       return res.status(422).json({
-        errors: errors.array(),
+        error: error.array(),
       });
     }
-
-    const id = req.params.id;
-
-    const gambar = req.files["gambar"] ? req.files["gambar"][0].filename : null;
-    const swa_foto = req.files["swa_foto"]
+    let id = req.params.id;
+    // Lakukan pengecekan apakah ada file yang diunggah
+    let gambar = req.files["gambar"] ? req.files["gambar"][0].filename : null;
+    let swa_foto = req.files["swa_foto"]
       ? req.files["swa_foto"][0].filename
       : null;
 
     connection.query(
-      `SELECT * FROM mahasiswa WHERE id_m = ${id}`,
+      `select * from mahasiswa where id_m = ${id}`,
       function (err, rows) {
         if (err) {
           return res.status(500).json({
@@ -165,6 +167,7 @@ router.patch(
         const gambarLama = rows[0].gambar;
         const swa_fotoLama = rows[0].swa_foto;
 
+        // Hapus file lama jika ada
         if (gambarLama && gambar) {
           const pathGambar = path.join(
             __dirname,
@@ -173,13 +176,13 @@ router.patch(
           );
           fs.unlinkSync(pathGambar);
         }
-        if (swa_fotoLama && gambar) {
-          const pathSwa = path.join(
+        if (swa_fotoLama && swa_foto) {
+          const pathSwaFoto = path.join(
             __dirname,
             "../public/images",
             swa_fotoLama
           );
-          fs.unlinkSync(pathSwa);
+          fs.unlinkSync(pathSwaFoto);
         }
 
         let Data = {
@@ -188,6 +191,7 @@ router.patch(
           id_jurusan: req.body.id_jurusan,
         };
 
+        // cek apakah ada gambar dan swa_foto baru jika yang diunggah
         if (gambar) {
           Data.gambar = gambar;
         }
@@ -196,9 +200,9 @@ router.patch(
         }
 
         connection.query(
-          `UPDATE mahasiswa SET ? WHERE id_m = ${id}`,
+          `update mahasiswa set ? where id_m = ${id}`,
           Data,
-          function (err, result) {
+          function (err, rows) {
             if (err) {
               return res.status(500).json({
                 status: false,
@@ -207,7 +211,7 @@ router.patch(
             } else {
               return res.status(200).json({
                 status: true,
-                message: "Update Sukses..!",
+                message: "Update Success..!",
               });
             }
           }
@@ -217,11 +221,11 @@ router.patch(
   }
 );
 
-router.delete("/delete/:id_m", function (req, res) {
-  const id_m = req.params.id_m;
+router.delete("/delete/(:id)", authenticateToken, function (req, res) {
+  let id = req.params.id;
 
   connection.query(
-    `SELECT * FROM mahasiswa WHERE id_m = ${id_m}`,
+    `select * from mahasiswa where id_m = ${id}`,
     function (err, rows) {
       if (err) {
         return res.status(500).json({
@@ -235,29 +239,30 @@ router.delete("/delete/:id_m", function (req, res) {
           message: "Not Found",
         });
       }
-
       const gambarLama = rows[0].gambar;
       const swa_fotoLama = rows[0].swa_foto;
+
       // Hapus file lama jika ada
       if (gambarLama) {
-        const pathfileLama = path.join(
+        const pathFileLama = path.join(
           __dirname,
           "../public/images",
           gambarLama
         );
-        fs.unlinkSync(pathfileLama);
-        if (swa_fotoLama) {
-          const pathfileLama = path.join(
-            _dirname,
-            "../public/images",
-            swa_fotoLama
-          );
-          fs.unlinkSync(pathfileLama);
-        }
+        fs.unlinkSync(pathFileLama);
       }
+      if (swa_fotoLama) {
+        const pathFileLama = path.join(
+          __dirname,
+          "../public/images",
+          swa_fotoLama
+        );
+        fs.unlinkSync(pathFileLama);
+      }
+
       connection.query(
-        `delete from mahasiswa where id_m = ${id_m}`,
-        function (err, result) {
+        `delete from mahasiswa where id_m = ${id}`,
+        function (err, rows) {
           if (err) {
             return res.status(500).json({
               status: false,
@@ -266,7 +271,7 @@ router.delete("/delete/:id_m", function (req, res) {
           } else {
             return res.status(200).json({
               status: true,
-              message: "Deleted Sukses..!",
+              message: "Data has ben delete !",
             });
           }
         }
